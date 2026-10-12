@@ -21,25 +21,12 @@ deploy/secret/       cert-manager ClusterIssuer (kept ready, disabled)
 cicd/                infra-pipeline, shared-pipeline, templates, variables
 ```
 
-## No secrets in git
-The account ID and DB password are **not** in this repo. They live in the Azure DevOps
-variable group `threetier-secrets`:
-
-| Variable       | Secret |
-|----------------|--------|
-| `awsAccountId` | no     |
-| `dbPassword`   | yes    |
-
-The pipeline fills the `__token__` placeholders in Terraform and the K8s manifests, and it
-creates `mongodb-secret` in the cluster from `dbPassword`.
-
 ## Prerequisites (Azure DevOps)
 - AWS service connection named `AzToAWS`.
 - Extensions installed in the organisation:
   - AWS Toolkit
   - Replace Tokens
   - Terraform (JasonBJohnson)
-- The variable group `threetier-secrets` described above.
 
 ## Method
 1. Run `cicd/shared-pipeline.yaml` once. It creates the tfstate bucket and the ECR repository.
