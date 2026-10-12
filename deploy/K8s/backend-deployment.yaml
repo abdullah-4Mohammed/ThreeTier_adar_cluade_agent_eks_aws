@@ -1,0 +1,37 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+  namespace: threetier
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      containers:
+      - name: backend
+        # __tokens__ are filled by the pipeline (replacetokens) - no account id in git
+        image: __awsAccountId__.dkr.ecr.__region__.amazonaws.com/__imageRepository__:backend-latest
+        env:
+        - name: DATABASE_USER
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: DATABASE_USER
+        - name: DATABASE_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: DATABASE_PASSWORD
+        - name: DATABASE_HOST
+          value: mongodb
+        - name: PORT
+          value: "3001"
+        ports:
+        - containerPort: 3001

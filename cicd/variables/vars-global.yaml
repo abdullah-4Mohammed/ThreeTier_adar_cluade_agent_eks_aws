@@ -1,0 +1,17 @@
+variables:
+  region: 'eu-west-2'
+  awsConnection: "AzToAWS"
+  serviceName: threetier-agent
+  backendBucketName: "backend-tfstate"
+  backendBucket: "$(serviceName)-$(backendBucketName)-$(environment)-$(regionShortName)"
+  regionShortName: euw2
+  environment: nonprod
+  ecrName: "$(serviceName)-$(environment)-$(regionShortName)"
+  imageRepository: "$(serviceName)-nonprod-euw2"
+  dockerFile_Backend: "$(System.DefaultWorkingDirectory)/src/backend/Dockerfile"
+  dockerFile_Frontend: "$(System.DefaultWorkingDirectory)/src/frontend/Dockerfile"
+  clusterName: "$(serviceName)-eks"
+  appNamespace: "threetier"
+  # awsAccountId and dbPassword are NOT kept in git.
+  # They come from the Azure DevOps variable group "threetier-secrets"
+  # (linked in infra-pipeline.yaml). dbPassword is marked as secret there.

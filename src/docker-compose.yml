@@ -1,0 +1,27 @@
+# local run only: DB_PASSWORD is read from your shell, e.g.  DB_PASSWORD=xxx docker compose up
+services:
+  mongodb:
+    image: mongo:7.0
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "27017:27017"
+
+  backend:
+    build: ./backend
+    environment:
+      DATABASE_HOST: mongodb
+      DATABASE_USER: admin
+      DATABASE_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "3001:3001"
+    depends_on:
+      - mongodb
+
+  frontend:
+    build: ./frontend
+    ports:
+      - "5000:80"
+    depends_on:
+      - backend

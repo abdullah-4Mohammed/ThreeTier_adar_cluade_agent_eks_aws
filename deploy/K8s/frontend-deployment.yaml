@@ -1,0 +1,23 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend
+  namespace: threetier
+  labels:
+    app: frontend
+spec:
+  replicas: 1
+  revisionHistoryLimit: 1
+  selector:
+    matchLabels:
+      app: frontend
+  template:
+    metadata:
+      labels:
+        app: frontend
+    spec:
+      containers:
+      - name: frontend
+        image: __awsAccountId__.dkr.ecr.__region__.amazonaws.com/__imageRepository__:frontend-latest
+        ports:
+        - containerPort: 80

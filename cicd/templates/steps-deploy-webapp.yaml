@@ -1,0 +1,47 @@
+steps:
+# fill __awsAccountId__ / __region__ / __imageRepository__ / __appNamespace__ in the manifests
+# so no account id is ever committed to git
+- task: replacetokens@6
+  displayName: Replace tokens in K8s manifests
+  inputs:
+    root: '$(System.DefaultWorkingDirectory)/deploy'
+    sources : '**/*.yaml'
+    tokenPattern: 'doubleunderscores'
+    logLevel: 'warn'
+    ifNoFilesFound: 'warn'
+    telemetryOptout: true
+
+- task: AWSShellScript@1
+  displayName: Deploy webapp to EKS
+  inputs:
+    awsCredentials: '$(awsConnection)'
+    regionName: '$(region)'
+    scriptType: 'inline'
+    inlineScript: |
+      set -ex
+      aws eks --region $(region) update-kubeconfig --name $(clusterName)
+
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/namespace.yaml
+
+      # db secret is created from the ADO secret variable, never stored in git
+      set +x
+      kubectl create secret generic mongodb-secret -n $(appNamespace) \
+        --from-literal=DATABASE_USER=admin \
+        --from-literal=DATABASE_PASSWORD="$DB_PASSWORD" \
+        --dry-run=client -o yaml | kubectl apply -f -
+      set -x
+
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/mongodb-deployment.yaml
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/mongodb-service.yaml
+
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/backend-deployment.yaml
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/backend-service.yaml
+
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/frontend-deployment.yaml
+      kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/K8s/frontend-service.yaml
+
+      # -latest tag does not change, so force pods to pull the new image
+      kubectl rollout restart deployment/backend deployment/frontend -n $(appNamespace)
+  env:
+    # secret variables must be mapped explicitly to be visible to scripts
+    DB_PASSWORD: $(dbPassword)

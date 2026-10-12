@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Three Tier App</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 560px; margin: 60px auto; padding: 0 16px; }
+    button { padding: 8px 14px; margin-right: 8px; cursor: pointer; }
+    pre { background: #f3f3f3; padding: 12px; border-radius: 6px; }
+  </style>
+</head>
+<body>
+  <h1>Three Tier App on EKS</h1>
+  <p>Frontend (nginx) → Backend (Node.js) → MongoDB</p>
+  <button onclick="call('/api')">Call Backend</button>
+  <button onclick="call('/api/visits')">Count Visit (DB)</button>
+  <button onclick="call('/api/health')">Health</button>
+  <pre id="out">-</pre>
+  <script>
+    async function call(path) {
+      const out = document.getElementById('out');
+      try {
+        const r = await fetch(path);
+        out.textContent = await r.text();
+      } catch (e) {
+        out.textContent = 'Error connecting to backend';
+      }
+    }
+  </script>
+</body>
+</html>

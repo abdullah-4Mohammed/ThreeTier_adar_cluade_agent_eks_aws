@@ -1,0 +1,61 @@
+name: $(SourceBranchName)-$(Date:yyyyMMdd)$(Rev:.r)
+
+trigger:
+  branches:
+    include:
+    - main
+  paths:
+    include:
+    - deploy
+    - src
+    - cicd
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+resources:
+- repo: self
+
+variables:
+- template: variables/vars-global.yaml
+- template: variables/vars-nonprod.yaml
+# secrets and account id live in this ADO variable group, not in git
+- group: threetier-secrets
+
+parameters:
+- name: environments
+  type: object
+  default: ['nonprod']
+
+stages:
+- ${{ each env in parameters.environments }}:
+  - stage: Deploy_${{ env }}
+    displayName: Deploy ${{ env }}
+    jobs:
+    - job: Deploy_Terraform
+      displayName: Deploy terraform infrastructure
+      #condition: and(succeeded(), eq(variables['Build.SourceBranch'], 'refs/heads/main'))
+      variables:
+      - template: variables/vars-${{ env }}.yaml
+      steps:
+      - template: templates/steps-deploy-tf.yaml
+
+    - job: Build_Push_Image
+      displayName: Build and push docker image
+      dependsOn: Deploy_Terraform
+      steps:
+      - template: templates/steps-build-push.yaml
+
+    - job: Deploy_WebApp
+      displayName: Deploy webapp to EKS
+      dependsOn: Build_Push_Image
+      steps:
+      - template: templates/steps-deploy-webapp.yaml
+
+    - job: Deploy_Nginx_Controller
+      displayName: Deploy Nginx Controller and Ingress
+      dependsOn: Deploy_WebApp
+      steps:
+      - template: templates/steps-deploy-nginx-controller.yaml
+      # deploy cert-manager (kept ready, needs a real domain first)
+      #- template: templates/steps-deploy-cert-manager.yaml
