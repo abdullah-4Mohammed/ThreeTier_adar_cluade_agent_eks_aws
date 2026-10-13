@@ -29,5 +29,7 @@ steps:
       inlineScript: |
         set -ex
         aws eks --region $(region) update-kubeconfig --name $(clusterName)
+        # wait for the controller (and its admission webhook) to be ready before applying the ingress
+        kubectl wait --namespace ingress-nginx --for=condition=ready pod --selector=app.kubernetes.io/component=controller --timeout=300s
         kubectl apply -f $(System.DefaultWorkingDirectory)/deploy/ingress/dev-frontend-ingress.yaml
 
